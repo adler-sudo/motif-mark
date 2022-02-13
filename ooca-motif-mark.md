@@ -23,7 +23,6 @@ Generate plan of attack for creating visual of motif locations within a series o
 * argparse
     * -f: fasta file
     * -m: motifs file
-    * -o: output file (same prefix as fasta with .png)
 * read through fasta
 * read through motif file
 * function to match motifs within reads/genes
