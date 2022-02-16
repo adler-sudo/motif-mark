@@ -49,12 +49,19 @@ def generate_output_filename(input_file:str):
     output_file = os.path.splitext(input_file)[0]+'.png'
     return output_file
 
-# run program
-if __name__ == '__main__':
-
+# program
+def main():
+    """
+    main program
+    """
     # read in args
     args = parse_args()
     output_file = generate_output_filename(args.input_file)
 
     # generate image
     generate_pycairo(output_file)
+
+
+# run program
+if __name__ == '__main__':
+    main()
