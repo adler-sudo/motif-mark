@@ -19,13 +19,13 @@ def test_gene_class(id_line='>THOMAS chr2:1-1',sequence='aaaaAAAAaaaa'):
     gene = Gene(id_line,sequence)
 
     assert gene.extract_gene('>THOMAS something') == 'THOMAS', 'error in extract_gene() method of Gene class'
-    print(gene.extract_location('>THOMAS chr2:1-1'))
     assert gene.extract_location('>THOMAS chr2:1-1') == 'chr2:1-1', 'error in extract_chr() method of Gene class'
+
     assert gene.identify_exons('aaaaAAAAaaaa') == [(4,8)], 'error in identify_exons() method of Gene class'
-
+    
     gene.identify_matches(motif,sequence='aaAAAAaaaa')
-    assert gene.matches == {'AAAA': [(2, 6)], 'aaaa': [(6, 10)]}, 'error in identify_matches() method of Gene class'
-
+    assert gene.matches == {motif:[2,6]}, 'error in identify_matches() method of Gene class'
+    
 
 ## TEST FUNCTIONS ##
 def test_read_in_motifs(motif_file):

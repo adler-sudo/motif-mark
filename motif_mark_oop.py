@@ -30,8 +30,9 @@ class Motif:
     the motif class
     """
     def __init__(self, motif):
-        self.motif = motif.upper()
-        self.combos = self.generate_combos(self.motif)
+        self.motif = motif
+        self.upper_motif = motif.upper()
+        self.combos = self.generate_combos(self.upper_motif)
         
     # methods
     def print_motif(self):
@@ -69,6 +70,13 @@ class Gene:
         exons = [(m.start(0),m.end(0)) for m in re.finditer(pattern='[A-Z]+',string=sequence)]
         return exons
 
+    def store_motif(self,motif):
+        """
+        store the motif in self.motifs
+        """
+        self.matches[motif] = []
+        return None
+    
     def identify_matches(self,motif,sequence):
         """
         identify motif matches in sequence
@@ -78,20 +86,25 @@ class Gene:
         motif : class Motif
             object of class type Motif
         """
-        
+        # store the motif
+        self.store_motif(motif)
         # TODO: should store motif objects within gene object (like tokens)
         # TODO: ^this will allow us to access their attributes later
         for pattern in motif.combos:
             matches = []
             # TODO: need to account for overlapping (for example 'aaaaaa' would only return one match for 'aaaa')
-            pattern_matches = [(m.start(0),m.end(0)) for m in re.finditer(pattern,sequence)]
+            pattern_matches = [m.start(0) for m in re.finditer(pattern,sequence)]
             if len(pattern_matches) > 0:
                 for pattern_match in pattern_matches:
-                    matches.append(pattern_match)
+                    self.matches[motif].append(pattern_match)
 
-            # include motif and matches in master dict
-            if len(matches) > 0:
-                self.matches[pattern] = matches
+            #### REMOVE ####
+                    # matches.append(pattern_match)
+
+            # # include motif and matches in master dict
+            # if len(matches) > 0:
+            #     self.matches[motif].append(matches)
+            #### REMOVE ####
 
 
 # motif reader
@@ -125,7 +138,7 @@ def generate_pycairo_legend(context,motif_color_dict,x,y):
             motif_color_dict[k][1],
             motif_color_dict[k][2])
         context.move_to(x-10,y-5)
-        context.line_to(x-10,y+5)
+        context.line_to(x-10,y)
         context.stroke()
         context.move_to(x,y)
         context.set_source_rgb(0.5,0.5,0.5)
@@ -135,44 +148,54 @@ def generate_pycairo_legend(context,motif_color_dict,x,y):
         # shift location down
         y += 20
 
+#### PYCAIRO ####
 
-def generate_pycairo(master_list,output_file:str):
+def generate_random_color(context):
+    red = random.random()
+    blue = random.random()
+    green = random.random()
+    context.set_source_rgb(red,blue,green)
+    return red,blue,green
+
+def generate_rectangle(context):
+    return None
+
+def update_longest_gene(master_dict,gene_class_object):
+    if master_dict['longest_gene'] < gene_class_object.length:
+        master_dict['longest_gene'] = gene_class_object.length
+    return master_dict
+
+def generate_pycairo(master_dict,output_file:str):
     """
     generate pycairo image
 
     Parameters:
     -----------
-    # TODO: need to adjust this once we decide which way we're going
-    # master_dict : dict
-    #     Contains genes and corresponding positions of matches. Matches are contained in tuples representing
-    #     beginning and end location. See structure below for details.
 
-    #     Structure:
-
-    #         {
-    #                 <motif_pattern>:
-    #                 [(<begin1>,<end1>),(<begin2>,<end2>),...,(<beginn>,<endn>)]
-    #         }
     """
 
-    # TODO: go back and functionalize this. may make sense to have pycairo class
+    master_list = master_dict['master_list']
 
     # motif color dict for storing colors
     motif_color_dict = {}
 
     # set surface
-    surface_width = 800
+    surface_width = master_dict['longest_gene'] + master_dict['longest_gene'] * .2
     surface_height = len(master_list) * 100
     surface = cairo.SVGSurface('plot.svg',surface_width,surface_height) # TODO: come back and fix surface later
     context = cairo.Context(surface)
     
     # define starting height
     height = 0
-    start = 800 * .05 # TODO: can use this to center our images a bit
+    start = surface_width * .1 # TODO: can use this to center our images a bit
     # TODO: ^ need to incorpoarte into our motif location points
+    motif_height = 10
 
     # loop through master dict
     for gene_class_object in master_list:
+
+        gene_center = height + 50
+
         # generate gene title
         context.set_source_rgb(0.5,0.5,0.5)
         context.set_font_size(12)
@@ -190,8 +213,8 @@ def generate_pycairo(master_list,output_file:str):
         # generate gene representation
         context.set_line_width(1)
         context.set_source_rgb(0.2,0.2,0.2)
-        context.move_to(0,height+50) 
-        context.line_to(gene_class_object.length, height+50)
+        context.move_to(start,gene_center) 
+        context.line_to(gene_class_object.length+start, height+50)
         context.stroke()
 
         # generate exon representation
@@ -204,8 +227,10 @@ def generate_pycairo(master_list,output_file:str):
         context.fill()
 
         # generate marks
-        for pattern in gene_class_object.matches:
-            matches = gene_class_object.matches[pattern]
+        for motif_object in gene_class_object.matches:
+            # extract matches and pattern from class objects
+            matches = gene_class_object.matches[motif_object]
+            pattern = motif_object.motif
 
             if pattern in motif_color_dict:
                 context.set_source_rgb(
@@ -215,21 +240,19 @@ def generate_pycairo(master_list,output_file:str):
                 )
             else:
                 # set color for specific motif match
-                red = random.random()
-                blue = random.random()
-                green = random.random()
-                
-                context.set_source_rgb(red,blue,green)
+                red,blue,green = generate_random_color(context)
                 motif_color_dict[pattern] = [red,blue,green]
                 
             # TODO: put length of motif in motif class (not sure best way to handle)
-            context.set_line_width(len(pattern) / 4)
+            context.set_line_width(len(pattern) / 2)
 
-            for match in matches:
-                context.move_to(match[0],height+25)
-                context.line_to(match[0],height+75)
+            for match_loc in matches:
+                stagger_height_adjustment = match_loc % 4 * 2
+                context.move_to(match_loc+start,gene_center-10)
+                context.line_to(match_loc+start,gene_center+10)
                 context.stroke()
 
+        # adjust height for next gene
         height += 100
 
     # generate legend
@@ -252,7 +275,7 @@ def main():
     main program
     """
     # set random seed
-    random.seed(0)
+    random.seed(3)
 
     # read in args
     args = parse_args()
@@ -262,7 +285,7 @@ def main():
     motifs = read_in_motifs(args.motif_file)
 
     # define master list
-    master_list = []
+    master_dict = {'master_list':[],'longest_gene':0}
 
     # open fasta
     open_fasta = open(args.input_file)
@@ -275,23 +298,23 @@ def main():
         sequence = open_fasta.readline().rstrip()
         # instantiate new gene
         gene = Gene(id_line,sequence)
+        master_dict= update_longest_gene(master_dict,gene)
         # process each motif through gene
         for motif in motifs:
             motif_object = Motif(motif)
             gene.identify_matches(motif_object, sequence)
         
-        master_list.append(gene)
+        master_dict['master_list'].append(gene)
 
         # generate pycairo image
         generate_pycairo(
-            master_list,
+            master_dict,
             output_file=output_file)
 
         
     
     open_fasta.close()
-    print(master_list)
-    
+    print('Your image is ready my majesty <bows>')
     
 
 # run program
