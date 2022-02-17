@@ -32,28 +32,18 @@ class Motif:
     def __init__(self, motif):
         self.motif = motif.upper()
         self.combos = self.generate_combos(self.motif)
-
+        
     # methods
     def print_motif(self):
         print(self.motif)
 
     def generate_combos(self,motif):
-        combos = []
-        # evaluate each base for possibilities
-        for base in motif:
-            possibilities = self.evaluate_base(base)
-            combos.append(possibilities)
-        # determine each combo
-        combos = [''.join(c) for c in list(itertools.product(*combos))]
+        pattern = ''.join([IUPACbases[c] for c in motif])
         # add lowercase
         # TODO: do we need to take into account combos of upper AND lower case (binding at start or stop)
-        lowers = [c.lower() for c in combos]
-        combos = combos + lowers
-
-        return combos
-
-    def evaluate_base(self,base):
-        return IUPACbases[base]
+        lower = pattern.lower()
+        patterns = [pattern, lower]
+        return patterns
 
 class Gene:
     """
@@ -155,7 +145,7 @@ def generate_pycairo(master_list,output_file:str):
     for gene_class_object in master_list:
         # generate gene representation
         context.set_line_width(1)
-        context.set_source_rgb(0,0,0)
+        context.set_source_rgb(0.2,0.2,0.2)
         context.move_to(0,height+50) 
         context.line_to(gene_class_object.length, height+50)
         context.stroke()

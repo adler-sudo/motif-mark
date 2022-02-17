@@ -11,10 +11,8 @@ def test_motif_class():
     """
     motif = Motif(motif='YYYY')
     assert motif.motif == 'YYYY', 'motif attribute not working'
-    assert motif.evaluate_base('Y') == ['C','T','U'], 'error in evaluate_base() method of Motif class'
-    assert motif.evaluate_base('T') == ['T','U'], 'error in evaluate_base() method of Motif class'
-    
-    assert motif.generate_combos('YT') == ['CT', 'CU', 'TT', 'TU', 'UT', 'UU', 'ct', 'cu', 'tt', 'tu', 'ut', 'uu'], 'error in generate_combos() method of Motif class'
+    motif.generate_combos('TG')
+    assert motif.generate_combos('TG') == ['[TU]G', '[tu]g'], 'error in generate_combos() method of Motif class'
 
 def test_gene_class(id_line='>THOMAS something./something\.',sequence='aaaaAAAAaaaa'):
     motif = Motif(motif='aaaa')
