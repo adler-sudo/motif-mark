@@ -11,22 +11,22 @@ import filecmp
 DNAbases = set('ATGCNatcgn')
 RNAbases = set('AUGCNaucgn')
 IUPACbases = {
-    'A': ['A'],
-    'C': ['C'],
-    'G': ['G'],
-    'T': ['T','U'],
-    'U': ['T','U'],
-    'R': ['A','G'],
-    'Y': ['C','T','U'],
-    'S': ['G','C'],
-    'W': ['A','T','U'],
-    'K': ['G','T','U'],
-    'M': ['A','C'],
-    'B': ['C','G','T','U'],
-    'D': ['A','G','T','U'],
-    'H': ['A','C','T','U'],
-    'V': ['A','C','G'],
-    'N': ['A','C','G','T','U']
+    'A': 'A',
+    'C': 'C',
+    'G': 'G',
+    'T': '[TU]',
+    'U': '[TU]',
+    'R': '[AG]',
+    'Y': '[CTU]',
+    'S': '[GC]',
+    'W': '[ATU]',
+    'K': '[GTU]',
+    'M': '[AC]',
+    'B': '[CGTU]',
+    'D': '[AGTU]',
+    'H': '[ACTU]',
+    'V': '[ACG]',
+    'N': '[ACGTU]'
 }
 
 def convert_phred(letter: str) -> int:
