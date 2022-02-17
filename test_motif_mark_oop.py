@@ -14,11 +14,13 @@ def test_motif_class():
     motif.generate_combos('TG')
     assert motif.generate_combos('TG') == ['[TU]G', '[tu]g'], 'error in generate_combos() method of Motif class'
 
-def test_gene_class(id_line='>THOMAS something./something\.',sequence='aaaaAAAAaaaa'):
+def test_gene_class(id_line='>THOMAS chr2:1-1',sequence='aaaaAAAAaaaa'):
     motif = Motif(motif='aaaa')
     gene = Gene(id_line,sequence)
 
     assert gene.extract_gene('>THOMAS something') == 'THOMAS', 'error in extract_gene() method of Gene class'
+    print(gene.extract_location('>THOMAS chr2:1-1'))
+    assert gene.extract_location('>THOMAS chr2:1-1') == 'chr2:1-1', 'error in extract_chr() method of Gene class'
     assert gene.identify_exons('aaaaAAAAaaaa') == [(4,8)], 'error in identify_exons() method of Gene class'
 
     gene.identify_matches(motif,sequence='aaAAAAaaaa')

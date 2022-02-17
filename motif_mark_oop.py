@@ -51,6 +51,7 @@ class Gene:
     """
     def __init__(self, id_line, sequence):
         self.gene = self.extract_gene(id_line)
+        self.location = self.extract_location(id_line)
         self.sequence = sequence
         self.exons = self.identify_exons(sequence)
         self.matches = {}
@@ -59,6 +60,10 @@ class Gene:
     def extract_gene(self,id_line):
         gene = id_line.split(' ')[0][1:]
         return gene
+
+    def extract_location(self,id_line):
+        chr = id_line.split(' ')[1]
+        return chr
 
     def identify_exons(self,sequence):
         exons = [(m.start(0),m.end(0)) for m in re.finditer(pattern='[A-Z]+',string=sequence)]
@@ -69,11 +74,13 @@ class Gene:
         identify motif matches in sequence
 
         Parameters:
-        -----------}
+        -----------
         motif : class Motif
             object of class type Motif
         """
         
+        # TODO: should store motif objects within gene object (like tokens)
+        # TODO: ^this will allow us to access their attributes later
         for pattern in motif.combos:
             matches = []
             # TODO: need to account for overlapping (for example 'aaaaaa' would only return one match for 'aaaa')
@@ -106,6 +113,29 @@ def read_in_motifs(motif_file:str):
     return motifs
 
 # pycairo
+def generate_pycairo_legend(context,motif_color_dict,x,y):
+    """
+    generate pycairo legend
+    """
+    
+    for k in motif_color_dict:
+        context.set_line_width(2)
+        context.set_source_rgb(
+            motif_color_dict[k][0],
+            motif_color_dict[k][1],
+            motif_color_dict[k][2])
+        context.move_to(x-10,y-5)
+        context.line_to(x-10,y+5)
+        context.stroke()
+        context.move_to(x,y)
+        context.set_source_rgb(0.5,0.5,0.5)
+        context.set_font_size(12)
+        context.select_font_face('Arial',cairo.FONT_SLANT_NORMAL,cairo.FONT_WEIGHT_NORMAL)
+        context.show_text(k)
+        # shift location down
+        y += 20
+
+
 def generate_pycairo(master_list,output_file:str):
     """
     generate pycairo image
@@ -143,6 +173,20 @@ def generate_pycairo(master_list,output_file:str):
 
     # loop through master dict
     for gene_class_object in master_list:
+        # generate gene title
+        context.set_source_rgb(0.5,0.5,0.5)
+        context.set_font_size(12)
+        context.select_font_face('Arial',cairo.FONT_SLANT_NORMAL,cairo.FONT_WEIGHT_NORMAL)
+        context.move_to(surface_width*.25,height+10)
+        context.show_text(gene_class_object.gene)
+
+        # generate gene location subtitle
+        context.set_source_rgb(0.5,0.5,0.5)
+        context.set_font_size(10)
+        context.select_font_face('Arial',cairo.FONT_SLANT_NORMAL,cairo.FONT_WEIGHT_NORMAL)
+        context.move_to(surface_width*.25,height+20)
+        context.show_text(gene_class_object.location)
+
         # generate gene representation
         context.set_line_width(1)
         context.set_source_rgb(0.2,0.2,0.2)
@@ -188,6 +232,8 @@ def generate_pycairo(master_list,output_file:str):
 
         height += 100
 
+    # generate legend
+    generate_pycairo_legend(context,motif_color_dict,surface_width*0.8,surface_height*0.1)
     # save as png
     surface.write_to_png(output_file)
     surface.finish()
