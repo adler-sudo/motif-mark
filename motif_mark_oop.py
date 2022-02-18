@@ -35,8 +35,8 @@ class Motif:
         self.combos = self.generate_combos(self.upper_motif)
         
     # methods
-    def print_motif(self):
-        print(self.motif)
+    def print_motif(self,motif):
+        return self.motif
 
     def generate_combos(self,motif):
         pattern = ''.join([IUPACbases[c] for c in motif])
@@ -98,15 +98,6 @@ class Gene:
                 for pattern_match in pattern_matches:
                     self.matches[motif].append(pattern_match)
 
-            #### REMOVE ####
-                    # matches.append(pattern_match)
-
-            # # include motif and matches in master dict
-            # if len(matches) > 0:
-            #     self.matches[motif].append(matches)
-            #### REMOVE ####
-
-
 # motif reader
 def read_in_motifs(motif_file:str):
     """
@@ -163,7 +154,7 @@ def generate_rectangle(context):
 def update_longest_gene(master_dict,gene_class_object):
     if master_dict['longest_gene'] < gene_class_object.length:
         master_dict['longest_gene'] = gene_class_object.length
-    return master_dict
+    # return master_dict
 
 def generate_pycairo(master_dict,output_file:str):
     """
@@ -275,7 +266,7 @@ def main():
     main program
     """
     # set random seed
-    random.seed(3)
+    random.seed(1000)
 
     # read in args
     args = parse_args()
@@ -298,7 +289,7 @@ def main():
         sequence = open_fasta.readline().rstrip()
         # instantiate new gene
         gene = Gene(id_line,sequence)
-        master_dict= update_longest_gene(master_dict,gene)
+        update_longest_gene(master_dict,gene)
         # process each motif through gene
         for motif in motifs:
             motif_object = Motif(motif)
