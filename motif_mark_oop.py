@@ -21,6 +21,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Generate image representing locations of motifs within gene.')
     parser.add_argument('-f','--input_file',help='Input fasta file.',default='test.fa')
     parser.add_argument('-m','--motif_file',help='File containing one motif per line.',default='test_motif.txt')
+    parser.add_argument('-d','--output_dir',help='Specify alternative output directory.')
+    parser.add_argument('-n','--new_name',help='Specify alternative name for output png file.',default=None)
     args = parser.parse_args()
     return args
 
@@ -253,11 +255,29 @@ def generate_pycairo(master_dict,output_file:str):
     surface.finish()
 
 # output name
-def generate_output_filename(input_file:str):
+def generate_output_filename(input_file:str,name:str=None,output_dir:str=None):
     """
     generate output file
     """
-    output_file = os.path.splitext(input_file)[0]+'.png'
+    extension = '.png'
+    
+    # define output directory
+    if output_dir is not None:
+        output_dir = os.path.dirname(output_dir)
+        if not os.path.exists(output_dir):
+            raise FileNotFoundError(f'{output_dir} directory does not exist. Please choose valid directory.')
+    else:
+        output_dir = os.path.join(os.path.dirname(input_file),'../output')
+    
+    # define file
+    if name is not None:
+        name = os.path.splitext(os.path.basename(name))[0]
+        name = name + extension
+        output_file = os.path.join(output_dir,name)
+    else:
+        name = os.path.splitext(os.path.basename(input_file))[0]
+        name = name + extension
+        output_file = os.path.join(output_dir,name)
     return output_file
 
 # program
@@ -270,7 +290,7 @@ def main():
 
     # read in args
     args = parse_args()
-    output_file = generate_output_filename(args.input_file)
+    output_file = generate_output_filename(args.input_file,args.new_name,args.output_dir)
 
     # read in motifs
     motifs = read_in_motifs(args.motif_file)
