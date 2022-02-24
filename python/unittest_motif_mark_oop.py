@@ -8,7 +8,7 @@ from motif_mark_oop import * # TODO: change this
 
 
 # test files
-TEST_MOTIF_FILE = os.path.join(os.path.dirname('data/input/'),'Fig_1_motifs.txt')
+TEST_MOTIF_FILE = os.path.join(os.path.dirname('../data/input/'),'Fig_1_motifs.txt')
 
 # build test class
 class TestMotif(unittest.TestCase):

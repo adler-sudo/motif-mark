@@ -22,7 +22,7 @@ def parse_args():
     parser.add_argument('-f','--input_file',help='Input fasta file.',default='test.fa')
     parser.add_argument('-m','--motif_file',help='File containing one motif per line.',default='test_motif.txt')
     parser.add_argument('-d','--output_dir',help='Specify alternative output directory.')
-    parser.add_argument('-n','--new_name',help='Specify alternative name for output png file.',default=None)
+    parser.add_argument('-n','--new_name',help='Specify alternative name for output png file.')
     args = parser.parse_args()
     return args
 
@@ -94,8 +94,6 @@ class Gene:
         """
         # store the motif
         self.store_motif(motif)
-        # TODO: should store motif objects within gene object (like tokens)
-        # TODO: ^this will allow us to access their attributes later
         for pattern in motif.combos:
             matches = []
             # TODO: need to account for overlapping (for example 'aaaaaa' would only return one match for 'aaaa')
@@ -122,7 +120,9 @@ def read_in_motifs(motif_file:str):
     
     return motifs
 
-# pycairo
+
+#### PYCAIRO ####
+
 def generate_pycairo_legend(context,motif_color_dict,x,y):
     """
     generate pycairo legend
@@ -144,8 +144,6 @@ def generate_pycairo_legend(context,motif_color_dict,x,y):
         context.show_text(k)
         # shift location down
         y += 20
-
-#### PYCAIRO ####
 
 def generate_random_color(context):
     red = random.random()
@@ -326,9 +324,10 @@ def main():
             master_dict,
             output_file=output_file)
 
-        
-    
     open_fasta.close()
+
+    # remove temporary plot
+    os.remove('plot.svg')
     print('Your image is ready my majesty <bows>')
     
 
