@@ -68,6 +68,7 @@ class TestGene(unittest.TestCase):
 
     def test_identify_matches(self):
         self.gene.identify_matches(self.motif,self.sequence)
+        print(self.gene.matches)
         self.assertDictEqual(self.gene.matches,{self.motif:[4, 0, 8]})
 
 class TestAdditionalMethods(unittest.TestCase):

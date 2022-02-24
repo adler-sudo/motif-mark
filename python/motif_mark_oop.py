@@ -97,6 +97,8 @@ class Gene:
         for pattern in motif.combos:
             matches = []
             # TODO: need to account for overlapping (for example 'aaaaaa' would only return one match for 'aaaa')
+            pattern = '(?={0})'.format(pattern)
+            print(pattern)
             pattern_matches = [m.start(0) for m in re.finditer(pattern,sequence)]
             if len(pattern_matches) > 0:
                 for pattern_match in pattern_matches:
@@ -146,9 +148,9 @@ def generate_pycairo_legend(context,motif_color_dict,x,y):
         y += 20
 
 def generate_random_color(context):
-    red = random.random()
-    blue = random.random()
-    green = random.random()
+    red = random.uniform(0,1)
+    blue = random.uniform(0,1)
+    green = random.uniform(0,1)
     context.set_source_rgb(red,blue,green)
     return red,blue,green
 
@@ -239,12 +241,17 @@ def generate_pycairo(master_dict,output_file:str):
                 motif_color_dict[pattern] = [red,blue,green]
                 
             # TODO: put length of motif in motif class (not sure best way to handle)
-            context.set_line_width(len(pattern) / 2)
+            context.set_line_width(len(pattern))
 
             for match_loc in matches:
-                stagger_height_adjustment = match_loc % 4 * 2
-                context.move_to(match_loc+start,gene_center-10)
-                context.line_to(match_loc+start,gene_center+10)
+                # TODO: clean this up
+                threshold = 16
+                if match_loc % threshold > threshold / 2:
+                    stagger_height_adjustment = match_loc % 8 * 3
+                else:
+                    stagger_height_adjustment = match_loc % 8 * -3
+                context.move_to(match_loc+start,gene_center-stagger_height_adjustment)
+                context.line_to(match_loc+start,gene_center-stagger_height_adjustment+1.5)
                 context.stroke()
 
         # adjust height for next gene
@@ -288,7 +295,7 @@ def main():
     main program
     """
     # set random seed
-    random.seed(1000)
+    random.seed(100)
 
     # read in args
     args = parse_args()
