@@ -279,12 +279,21 @@ def oneline_fasta(input_file: str, output_file: str):
 
     """
 
+    # rename input file
+    dir = os.path.dirname(input_file)
+    name, ext = os.path.splitext(os.path.basename(input_file))
+
+    new_name = name + '_original' + ext
+    new_name = os.path.join(dir,new_name)
+
+    os.rename(input_file,new_name)
+
     # overwrite output file if exists
     with open(output_file,'w'):
         pass
 
     # read each line of the input file
-    with open(input_file) as f:
+    with open(new_name) as f:
 
         # write first line
         firstline = f.readline().rstrip()
