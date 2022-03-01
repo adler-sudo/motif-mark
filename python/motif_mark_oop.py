@@ -231,6 +231,14 @@ def generate_pycairo(master_dict,output_file:str):
             gene_class_object.exons[0][1]-gene_class_object.exons[0][0],
             50)
         context.fill()
+        context.rectangle(
+            gene_class_object.exons[0][0]+start,
+            height+25,
+            gene_class_object.exons[0][1]-gene_class_object.exons[0][0],
+            50)
+        context.set_source_rgb(1,0,1)
+        context.set_line_width(1)
+        context.stroke()
 
         # generate marks
         for motif_object in gene_class_object.matches:
