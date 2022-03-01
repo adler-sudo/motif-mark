@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 # import modules
+from turtle import position
 import cairo
 import math
 import re
@@ -98,7 +99,6 @@ class Gene:
             matches = []
             # TODO: need to account for overlapping (for example 'aaaaaa' would only return one match for 'aaaa')
             pattern = '(?={0})'.format(pattern)
-            print(pattern)
             pattern_matches = [m.start(0) for m in re.finditer(pattern,sequence)]
             if len(pattern_matches) > 0:
                 for pattern_match in pattern_matches:
@@ -129,23 +129,28 @@ def generate_pycairo_legend(context,motif_color_dict,x,y):
     """
     generate pycairo legend
     """
-    
+    context.move_to(x,y-20)
+    context.set_source_rgb(0.5,0.5,0.5)
+    context.set_font_size(14)
+    context.select_font_face('Arial',cairo.FONT_SLANT_NORMAL,cairo.FONT_WEIGHT_NORMAL)
+    context.show_text('Legend')
+
     for k in motif_color_dict:
         context.set_line_width(2)
         context.set_source_rgb(
             motif_color_dict[k][0],
             motif_color_dict[k][1],
             motif_color_dict[k][2])
-        context.move_to(x-10,y-5)
-        context.line_to(x-10,y)
+        context.move_to(x,y-5)
+        context.line_to(x,y)
         context.stroke()
-        context.move_to(x,y)
+        context.move_to(x+10,y)
         context.set_source_rgb(0.5,0.5,0.5)
         context.set_font_size(12)
         context.select_font_face('Arial',cairo.FONT_SLANT_NORMAL,cairo.FONT_WEIGHT_NORMAL)
         context.show_text(k)
-        # shift location down
-        y += 20
+        # shift location right
+        x += 100
 
 def generate_random_color(context):
     red = random.uniform(0,1)
@@ -175,21 +180,25 @@ def generate_pycairo(master_dict,output_file:str):
 
     # motif color dict for storing colors
     motif_color_dict = {}
+    
+    # define starting height
+    height = 100
 
     # set surface
     surface_width = master_dict['longest_gene'] + master_dict['longest_gene'] * .2
-    surface_height = len(master_list) * 100
+    surface_height = len(master_list) * 100 + height
     surface = cairo.SVGSurface('plot.svg',surface_width,surface_height) # TODO: come back and fix surface later
     context = cairo.Context(surface)
     
-    # define starting height
-    height = 0
     start = surface_width * .1 # TODO: can use this to center our images a bit
     # TODO: ^ need to incorpoarte into our motif location points
     motif_height = 10
 
     # loop through master dict
     for gene_class_object in master_list:
+        
+        # use to avoid overlaps, adjusting y axis of motif marks
+        motif_position_dict = {}
 
         gene_center = height + 50
 
@@ -217,7 +226,7 @@ def generate_pycairo(master_dict,output_file:str):
         # generate exon representation
         # TODO: put length of exon in gene class (not sure best way to handle)
         context.rectangle(
-            gene_class_object.exons[0][0],
+            gene_class_object.exons[0][0]+start,
             height+25,
             gene_class_object.exons[0][1]-gene_class_object.exons[0][0],
             50)
@@ -244,21 +253,29 @@ def generate_pycairo(master_dict,output_file:str):
             context.set_line_width(len(pattern))
 
             for match_loc in matches:
-                # TODO: clean this up
-                threshold = 16
-                if match_loc % threshold > threshold / 2:
-                    stagger_height_adjustment = match_loc % 8 * 3
-                else:
-                    stagger_height_adjustment = match_loc % 8 * -3
+                stagger_height_adjustment = 0
+                while True:
+                    # TODO: clean this up
+                    positions_covered = set(range(match_loc,match_loc+len(pattern)+10)) # plus two gives padding to marks
+                    if stagger_height_adjustment in motif_position_dict.keys():
+                        if positions_covered.isdisjoint(motif_position_dict[stagger_height_adjustment]):
+                            motif_position_dict[stagger_height_adjustment].update(positions_covered)   
+                            break                          
+                        else:
+                            stagger_height_adjustment += 3
+                    else:
+                        motif_position_dict[stagger_height_adjustment] = positions_covered
+                        break
+                    
                 context.move_to(match_loc+start,gene_center-stagger_height_adjustment)
-                context.line_to(match_loc+start,gene_center-stagger_height_adjustment+1.5)
+                context.line_to(match_loc+start,gene_center-stagger_height_adjustment+2)
                 context.stroke()
 
         # adjust height for next gene
         height += 100
 
     # generate legend
-    generate_pycairo_legend(context,motif_color_dict,surface_width*0.8,surface_height*0.1)
+    generate_pycairo_legend(context,motif_color_dict,surface_width*0.1,50)
     # save as png
     surface.write_to_png(output_file)
     surface.finish()
@@ -326,10 +343,10 @@ def main():
         
         master_dict['master_list'].append(gene)
 
-        # generate pycairo image
-        generate_pycairo(
-            master_dict,
-            output_file=output_file)
+    # generate pycairo image
+    generate_pycairo(
+        master_dict,
+        output_file=output_file)
 
     open_fasta.close()
 
