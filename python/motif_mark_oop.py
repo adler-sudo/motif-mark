@@ -11,7 +11,7 @@ import random
 import argparse
 import os
 
-from Bioinfo import DNAbases, IUPACbases
+from Bioinfo import DNAbases, IUPACbases, oneline_fasta
 
 
 # argparse
@@ -324,6 +324,7 @@ def main():
 
     # read in args
     args = parse_args()
+    oneline_fasta(args.input_file,args.input_file)
     output_file = generate_output_filename(args.input_file,args.new_name,args.output_dir)
 
     # read in motifs
