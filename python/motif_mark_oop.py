@@ -47,11 +47,7 @@ class Motif:
 
     def generate_combos(self,motif):
         pattern = ''.join([IUPACbases[c] for c in motif])
-        # add lowercase
-        # TODO: do we need to take into account combos of upper AND lower case (binding at start or stop)
-        lower = pattern.lower()
-        patterns = [pattern, lower]
-        return patterns
+        return [pattern]
 
 class Gene:
     """
@@ -99,7 +95,7 @@ class Gene:
             matches = []
             # TODO: need to account for overlapping (for example 'aaaaaa' would only return one match for 'aaaa')
             pattern = '(?={0})'.format(pattern)
-            pattern_matches = [m.start(0) for m in re.finditer(pattern,sequence)]
+            pattern_matches = [m.start(0) for m in re.finditer(pattern,sequence,re.IGNORECASE)]
             if len(pattern_matches) > 0:
                 for pattern_match in pattern_matches:
                     self.matches[motif].append(pattern_match)
@@ -260,11 +256,12 @@ def generate_pycairo(master_dict,output_file:str):
             # TODO: put length of motif in motif class (not sure best way to handle)
             context.set_line_width(len(pattern))
 
+            # shift y axis location if overlap
             for match_loc in matches:
                 stagger_height_adjustment = 0
                 while True:
                     # TODO: clean this up
-                    positions_covered = set(range(match_loc,match_loc+len(pattern)+10)) # plus two gives padding to marks
+                    positions_covered = set(range(match_loc,match_loc+len(pattern)+10)) # plus ten gives padding to marks
                     if stagger_height_adjustment in motif_position_dict.keys():
                         if positions_covered.isdisjoint(motif_position_dict[stagger_height_adjustment]):
                             motif_position_dict[stagger_height_adjustment].update(positions_covered)   
@@ -324,7 +321,7 @@ def main():
 
     # read in args
     args = parse_args()
-    oneline_fasta(args.input_file,args.input_file)
+    oneline_file = oneline_fasta(args.input_file)
     output_file = generate_output_filename(args.input_file,args.new_name,args.output_dir)
 
     # read in motifs
@@ -334,7 +331,7 @@ def main():
     master_dict = {'master_list':[],'longest_gene':0}
 
     # open fasta
-    open_fasta = open(args.input_file)
+    open_fasta = open(oneline_file)
 
     while True:
         id_line = open_fasta.readline().rstrip()

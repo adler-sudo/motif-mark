@@ -263,7 +263,7 @@ def list_of_lists(file: str, all_qscores: list) -> (list,int):
     return all_qscores, linecount
 
 # define our fasta line sequence concatenator
-def oneline_fasta(input_file: str, output_file: str):
+def oneline_fasta(input_file: str):
     """
     removes newline characters from fasta file and writes to new fasta file
 
@@ -283,25 +283,21 @@ def oneline_fasta(input_file: str, output_file: str):
     dir = os.path.dirname(input_file)
     name, ext = os.path.splitext(os.path.basename(input_file))
 
-    new_name = name + '_original' + ext
-    new_name = os.path.join(dir,new_name)
+    oneline_name = name + '_oneline' + ext
+    oneline_file = os.path.join(dir,oneline_name)
 
-    os.rename(input_file,new_name)
-
-    # overwrite output file if exists
-    with open(output_file,'w'):
-        pass
+    # os.rename(input_file,new_name)
 
     # read each line of the input file
-    with open(new_name) as f:
+    with open(input_file) as f:
 
         # write first line
         firstline = f.readline().rstrip()
-        with open(output_file,'a') as nf:
+        with open(oneline_file,'w') as nf:
             nf.write(firstline+'\n')
         
-        # write to output file
-        with open(output_file,'a') as nf:
+        # # write to output file
+        # with open(output_file,'a') as nf:
 
             while True:
 
@@ -320,6 +316,7 @@ def oneline_fasta(input_file: str, output_file: str):
                 else:
                     nf.write(line)
 
+    return oneline_file
 
 # oneline_fasta tests
 if __name__ == "__main__":
