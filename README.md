@@ -4,7 +4,7 @@ Motif mark generates an image of a gene, indicating locations of exons, introns,
 
 Motif mark takes two files as input: a fasta file (with each sequence on a single line) and a motif file (with each motif on a single line).
 
-![](data/output/Figure_1.png)
+![](data/output/Figure_2.png)
 
 ## **Clone the repository**
 
@@ -22,7 +22,7 @@ Run the following command to generate your image, replacing the variables with t
 ./motif_mark_oop.py -f $FASTA_FILE -m $MOTIF_FILE
 ```
 
-The script will begin by converting your fasta file to a 'oneline fasta', where each sequence exists on just one line. It will rename the original fasta file, appending '_original' between the original name and the fasta. The 'oneline fasta' will take on the original name of the fasta file.
+The script will begin by converting your fasta file to a 'oneline fasta', where each sequence exists on just one line. It will leave the original fasta file intact and will create and additional file with '_oneline' insterted between the original file name and the extension.
 
 By default, the python script will place the image in a directory ```output/``` adjacent to the directory where the $FASTA is located. The default name of the image file will be the same as the $FASTA_FILE file, but with ```.png``` extension. 
 
