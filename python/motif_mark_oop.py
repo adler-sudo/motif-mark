@@ -30,30 +30,41 @@ def parse_args():
 # classes
 class Motif:
     """
-    the motif class
+    The motif class
     """
     def __init__(self, motif):
         """
         motif : str
-
         """
         self.motif = motif
         self.upper_motif = motif.upper()
         self.combos = self.generate_combos(self.upper_motif)
         
     # methods
-    def print_motif(self,motif):
+    def print_motif(self,motif:str) -> str:
         return self.motif
 
-    def generate_combos(self,motif):
-        pattern = ''.join([IUPACbases[c] for c in motif])
-        return [pattern]
+    def generate_combos(self,motif:str) -> list:
+        """
+        Uses IUPACbases to generate the unique motif pattern.
+        
+        Parameters:
+        -----------
+        motif : str
+            The motif as it appears in the input motifs file.
+        
+        Returns:
+        --------
+        pattern : list
+            List of all patterns of this motif."""
+        pattern = [''.join([IUPACbases[c] for c in motif])]
+        return pattern
 
 class Gene:
     """
-    the gene class
+    The Gene class
     """
-    def __init__(self, id_line, sequence):
+    def __init__(self, id_line, sequence:str):
         self.gene = self.extract_gene(id_line)
         self.location = self.extract_location(id_line)
         self.sequence = sequence
@@ -61,33 +72,79 @@ class Gene:
         self.matches = {}
         self.length = len(self.sequence)
 
-    def extract_gene(self,id_line):
+    def extract_gene(self,id_line:str) -> str:
+        """
+        Extracts the gene from the ID line.
+        
+        Parameters:
+        -----------
+        id_line : str
+            The ID line for the gene as seen in the fasta file.
+        
+        Returns:
+        --------
+        gene : str
+            The gene name as it appears in the fasta file.
+        """
         gene = id_line.split(' ')[0][1:]
         return gene
 
-    def extract_location(self,id_line):
+    def extract_location(self,id_line:str) -> str:
+        """
+        Extracts the gene location from the ID line.
+        
+        Parameters:
+        -----------
+        id_line : str
+            The ID line for the gene as seen in the fasta file.
+            
+        Returns:
+        --------
+        chr : str
+            The location of the gene extracted from the ID line of the fasta file.
+        """
         chr = id_line.split(' ')[1]
         return chr
 
-    def identify_exons(self,sequence):
+    def identify_exons(self,sequence:str) -> list:
+        """
+        Identifies the exon locations in the fasta sequence for the gene - indicated by capital bases.
+        
+        Parameters:
+        -----------
+        sequence : str
+            The entire sequence of the gene as it appears in the fasta file
+        
+        Returns:
+        --------
+        exons : list
+            The start and end position of each exon in the fasta sequence. Each unit is composed of a tuple: (start position, end position)
+        """
         exons = [(m.start(0),m.end(0)) for m in re.finditer(pattern='[A-Z]+',string=sequence)]
         return exons
 
-    def store_motif(self,motif):
+    def store_motif(self,motif:Motif) -> None:
         """
-        store the motif in self.motifs
+        Stores the motif object in the gene class attribute matches. This is a dictionary with motif class as key and empty list as value.
+
+        Parameters:
+        -----------
+        motif : Motif
+            Motif class object
         """
         self.matches[motif] = []
         return None
     
-    def identify_matches(self,motif,sequence):
+    def identify_matches(self,motif:Motif,sequence:str) -> None:
         """
-        identify motif matches in sequence
+        Identify the matches of a motif in the current sequence.
 
         Parameters:
         -----------
-        motif : class Motif
-            object of class type Motif
+        motif : Motif
+            Motif class object being evaluated.
+        sequence : str
+            String of the gene glass object
         """
         # store the motif
         self.store_motif(motif)
@@ -99,11 +156,22 @@ class Gene:
             if len(pattern_matches) > 0:
                 for pattern_match in pattern_matches:
                     self.matches[motif].append(pattern_match)
+        return None
 
 # motif reader
-def read_in_motifs(motif_file:str):
+def read_in_motifs(motif_file:str) -> list:
     """
-    reads in all motifs
+    Generates a list with all of the motifs from the motif input file.
+
+    Parameters:
+    -----------
+    motif_file : str
+        The input motif file to extract motif sequences from
+
+    Returns:
+    --------
+    motifs : list
+        List of each of the motifs in the motif input file. Motifs exist as strings in the list.
     """
     f = open(motif_file,'r')
     motifs = []
@@ -121,10 +189,24 @@ def read_in_motifs(motif_file:str):
 
 #### PYCAIRO ####
 
-def generate_pycairo_legend(context,motif_color_dict,x,y):
+def generate_pycairo_legend(context:cairo.Context,motif_color_dict:dict,x:int,y:int) -> None:
     """
-    generate pycairo legend
+    Generate the pycairo legend for the output figure.
+
+    Parameters:
+    -----------
+    context : cairo.Context
+        Context object specifying where to draw the image
+    motif_color_dict : dict
+        Dicitonary holding the colors associated with each motif. Motif is they key and color is the value.
+    x : int
+        Beginning x coordinate for pycairo image.
+    y : int
+        Beginning y coordinate for pycairo image.
     """
+    exons_per_row = 4
+    exon_counter = 0
+
     context.move_to(x,y-20)
     context.set_source_rgb(0.5,0.5,0.5)
     context.set_font_size(14)
@@ -146,9 +228,23 @@ def generate_pycairo_legend(context,motif_color_dict,x,y):
         context.select_font_face('Arial',cairo.FONT_SLANT_NORMAL,cairo.FONT_WEIGHT_NORMAL)
         context.show_text(k)
         # shift location right
-        x += 100
+        x += 120
+    return None
 
-def generate_random_color(context):
+def generate_random_color(context:cairo.Context) -> tuple[float,float,float]:
+    """
+    Generates and sets random color to be used in pycairo image
+    
+    Parameters:
+    -----------
+    context : cairo.Context
+        Context object specifying where to draw the image
+
+    Returns:
+    --------
+    red,blue,green : tuple
+        The red blue and green values generated
+    """
     red = random.uniform(0,1)
     blue = random.uniform(0,1)
     green = random.uniform(0,1)
@@ -158,18 +254,32 @@ def generate_random_color(context):
 def generate_rectangle(context):
     return None
 
-def update_longest_gene(master_dict,gene_class_object):
+def update_longest_gene(master_dict:dict,gene_class_object:Gene) -> None:
+    """
+    Updates the longest gene value in the master_dict
+    
+    Parameters:
+    -----------
+    master_dict : dict
+        The dictionary containing longest gene as key and associated integer value as value.
+    gene_class_object : Gene
+        The cuurent Gene object being evaluated
+    """
     if master_dict['longest_gene'] < gene_class_object.length:
         master_dict['longest_gene'] = gene_class_object.length
     # return master_dict
+    return None
 
-def generate_pycairo(master_dict,output_file:str):
+def generate_pycairo(master_dict:dict,output_file:str) -> None:
     """
-    generate pycairo image
+    Generate the pycairo image
 
     Parameters:
     -----------
-
+    master_dict : dict
+        Dictionary containing the list of gene objects 'master_list' and 'longest_genes'
+    output_file : str
+        The output file name to write the image to
     """
 
     master_list = master_dict['master_list']
@@ -286,11 +396,24 @@ def generate_pycairo(master_dict,output_file:str):
     # save as png
     surface.write_to_png(output_file)
     surface.finish()
+    return None
 
 # output name
-def generate_output_filename(input_file:str,name:str=None,output_dir:str=None):
+def generate_output_filename(input_file:str,name:str=None,output_dir:str=None) -> str:
     """
-    generate output file
+    Generate the output filename given the input file. The output file name should have the same name but with .png extension.
+
+    input_file : str
+        The input fasta file to be evaluated.
+    name : str
+        If the user has specified a new name for their file then this will be a value other than None
+    output_dir : str
+        If the user has specified a new directory for their file other than default this will be a value other than None.
+
+    Returns:
+    --------
+    output_file : str
+        The output file to write the image to
     """
     extension = '.png'
     
