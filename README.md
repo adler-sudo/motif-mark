@@ -12,6 +12,15 @@ Motif mark takes two files as input: a fasta file (with each sequence on a singl
 git clone <repo>
 ```
 
+## **Establish conda environment**
+
+The required dependencies for establishing a new conda environment are located in the ```environment.yml``` file. Replace $CONDA_ENV_NAME with your desired name for the motif-mark conda environemnt.
+
+```
+conda create --name $CONDA_ENV_NAME -f environment.yml
+conda activate $CONDA_ENV_NAME
+```
+
 ## **Execution guide**
 
 ### **1. Generate image**

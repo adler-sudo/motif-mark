@@ -1,7 +1,6 @@
 name: motif-mark
 channels:
   - conda-forge
-  - anaconda
   - defaults
 dependencies:
   - _libgcc_mutex=0.1=main
@@ -10,8 +9,9 @@ dependencies:
   - async_generator=1.10=pyhd3eb1b0_0
   - attrs=21.4.0=pyhd3eb1b0_0
   - backcall=0.2.0=pyhd3eb1b0_0
+  - blas=1.0=mkl
   - bleach=4.1.0=pyhd3eb1b0_0
-  - ca-certificates=2020.10.14=0
+  - ca-certificates=2022.2.1=h06a4308_0
   - cairo=1.16.0=hf32fb01_1
   - certifi=2021.10.8=py39h06a4308_2
   - cffi=1.15.0=py39hd667e15_1
@@ -29,6 +29,7 @@ dependencies:
   - icu=58.2=he6710b0_3
   - importlib-metadata=4.8.2=py39h06a4308_0
   - importlib_metadata=4.8.2=hd3eb1b0_0
+  - intel-openmp=2021.4.0=h06a4308_3561
   - ipykernel=6.4.1=py39h06a4308_1
   - ipython=7.31.1=py39h06a4308_0
   - ipython_genutils=0.2.0=pyhd3eb1b0_1
@@ -57,12 +58,18 @@ dependencies:
   - markupsafe=2.0.1=py39h27cfd23_0
   - matplotlib-inline=0.1.2=pyhd3eb1b0_2
   - mistune=0.8.4=py39h27cfd23_1000
+  - mkl=2021.4.0=h06a4308_640
+  - mkl-service=2.4.0=py39h7f8727e_0
+  - mkl_fft=1.3.1=py39hd3c417c_0
+  - mkl_random=1.2.2=py39h51133e4_0
   - nbclient=0.5.3=pyhd3eb1b0_0
   - nbconvert=6.3.0=py39h06a4308_0
   - nbformat=5.1.3=pyhd3eb1b0_0
   - ncurses=6.3=h7f8727e_2
   - nest-asyncio=1.5.1=pyhd3eb1b0_0
   - notebook=6.4.6=py39h06a4308_0
+  - numpy=1.21.2=py39h20f2e39_0
+  - numpy-base=1.21.2=py39h79a1101_0
   - openssl=1.1.1m=h7f8727e_0
   - packaging=21.3=pyhd3eb1b0_0
   - pandocfilters=1.5.0=pyhd3eb1b0_0
