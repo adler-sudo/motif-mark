@@ -245,8 +245,25 @@ class GeneCollection():
         num_genes = len(gene_list)
         return gene_list, num_genes
 
+    def process_fasta(self,open_fasta,motifs:list) -> None:
+        """
+        Processes a one line fasta file
+        """
+        while True:
+            id_line = open_fasta.readline().rstrip()
+            # evalaute if end of file
+            if id_line == '':
+                break
+            sequence = open_fasta.readline().rstrip()
+            # instantiate new gene
+            gene = Gene(id_line,sequence)
+            self.add_new_gene(gene)
+            # process each motif through gene
+            for motif in motifs:
+                motif_object = Motif(motif)
+                gene.identify_matches(motif_object, sequence)
+        return None
 
-#### PYCAIRO ####
 
 class MotifCairo(cairo.Context):
     """
@@ -512,33 +529,18 @@ def main():
     open_fasta = open(oneline_file)
 
     gene_collection = GeneCollection()
-    
-    while True:
-        id_line = open_fasta.readline().rstrip()
-        # evalaute if end of file
-        if id_line == '':
-            break
-        sequence = open_fasta.readline().rstrip()
-        # instantiate new gene
-        gene = Gene(id_line,sequence)
-        gene_collection.add_new_gene(gene)
-        # process each motif through gene
-        for motif in motifs:
-            motif_object = Motif(motif)
-            gene.identify_matches(motif_object, sequence)
+    gene_collection.process_fasta(open_fasta,motifs)
+    open_fasta.close()
 
     surface_width,surface_height = generate_image_dimensions(gene_collection)
-    
     surface = cairo.SVGSurface('plot.svg',surface_width,surface_height)
-    context = MotifCairo(surface)
     
+    context = MotifCairo(surface)
     context.generate_pycairo_image(
         gene_collection,
         output_file=output_file,
         surface_width=surface_width,
         surface_height=surface_height)
-
-    open_fasta.close()
 
     # remove temporary fasta and plot
     os.remove(oneline_file)
