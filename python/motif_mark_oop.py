@@ -186,8 +186,74 @@ def read_in_motifs(motif_file:str) -> list:
     
     return motifs
 
+class GeneCollection():
+    """
+    Collection of Genes to be drawn in pycairo.
+    """
+    def __init__(self):
+        self.gene_list = []
+        self.longest_gene = 0
+        self.num_genes = 0
+
+    def add_new_gene(self,gene:Gene) -> None:
+        """
+        Execute series of steps to process new Gene class object
+        
+        Parameters:
+        -----------
+        gene : Gene
+            Gene class object to be added.
+        """
+        self.gene_list, self.num_genes = self.append_gene(gene,self.gene_list)
+        self.longest_gene = self.evaluate_gene_length(self.longest_gene,gene.length)
+
+    def evaluate_gene_length(self,longest_gene:int,gene_length:int) -> int:
+        """
+        Evaluate new gene length and change longest_gene if longer than current.
+        
+        Parameters:
+        -----------
+        gene_length : int
+            Length of gene being added to collection
+        
+        Returns:
+        --------
+        gene_length : int
+            Length of longest gene in collection
+        """
+        new_gene_length = max(longest_gene,gene_length)
+        return new_gene_length
+
+    def append_gene(self,gene:Gene,gene_list:list) -> tuple:
+        """
+        Adds new gene to gene_list
+        
+        Parameters:
+        -----------
+        gene : Gene
+            Gene to be added to list
+        gene_list : list
+            List of genes 
+            
+        Returns:
+        --------
+        gene_list : list
+            List of genes with new gene appended
+        """
+        gene_list.append(gene)
+        num_genes = len(gene_list)
+        return gene_list, num_genes
+
 
 #### PYCAIRO ####
+
+class MotifCairo(cairo.Context):
+    """
+    Class extension of cairo.Context
+    """
+    def __init__(self,surface):
+        super().__init__()
+        self.motif_color_dict = {}
 
 def generate_pycairo_legend(context:cairo.Context,motif_color_dict:dict,x:int,y:int) -> None:
     """
@@ -270,7 +336,7 @@ def update_longest_gene(master_dict:dict,gene_class_object:Gene) -> None:
     # return master_dict
     return None
 
-def generate_pycairo(master_dict:dict,output_file:str) -> None:
+def generate_pycairo(gene_collection:GeneCollection,output_file:str) -> None:
     """
     Generate the pycairo image
 
@@ -282,7 +348,7 @@ def generate_pycairo(master_dict:dict,output_file:str) -> None:
         The output file name to write the image to
     """
 
-    master_list = master_dict['master_list']
+    # master_list = gene_collection.gene_list
 
     # motif color dict for storing colors
     motif_color_dict = {}
@@ -291,8 +357,8 @@ def generate_pycairo(master_dict:dict,output_file:str) -> None:
     height = 100
 
     # set surface
-    surface_width = master_dict['longest_gene'] + master_dict['longest_gene'] * .2
-    surface_height = len(master_list) * 100 + height
+    surface_width = gene_collection.longest_gene + gene_collection.longest_gene * .2
+    surface_height = len(gene_collection.gene_list) * 100 + height
     surface = cairo.SVGSurface('plot.svg',surface_width,surface_height) # TODO: come back and fix surface later
     context = cairo.Context(surface)
     
@@ -301,7 +367,7 @@ def generate_pycairo(master_dict:dict,output_file:str) -> None:
     motif_height = 10
 
     # loop through master dict
-    for gene_class_object in master_list:
+    for gene_class_object in gene_collection.gene_list:
         
         # use to avoid overlaps, adjusting y axis of motif marks
         motif_position_dict = {}
@@ -458,6 +524,8 @@ def main():
     # open fasta
     open_fasta = open(oneline_file)
 
+    # TODO: CAPTURE THIS WHOLE CLASS WITHIN THE MotifCairo CLASS
+    gene_collection = GeneCollection()
     while True:
         id_line = open_fasta.readline().rstrip()
         # evalaute if end of file
@@ -466,6 +534,7 @@ def main():
         sequence = open_fasta.readline().rstrip()
         # instantiate new gene
         gene = Gene(id_line,sequence)
+        gene_collection.add_new_gene(gene)
         update_longest_gene(master_dict,gene)
         # process each motif through gene
         for motif in motifs:
@@ -476,7 +545,7 @@ def main():
 
     # generate pycairo image
     generate_pycairo(
-        master_dict,
+        gene_collection,
         output_file=output_file)
 
     open_fasta.close()
