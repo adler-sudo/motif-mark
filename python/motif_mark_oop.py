@@ -39,6 +39,7 @@ class Motif:
         self.motif = motif
         self.upper_motif = motif.upper()
         self.combos = self.generate_combos(self.upper_motif)
+        self.length = len(motif)
         
     # methods
     def print_motif(self,motif:str) -> str:
@@ -254,215 +255,206 @@ class MotifCairo(cairo.Context):
     def __init__(self,surface):
         super().__init__()
         self.motif_color_dict = {}
+        self.surface = surface
 
-def generate_pycairo_legend(context:cairo.Context,motif_color_dict:dict,x:int,y:int) -> None:
+    def generate_pycairo_legend(self,motif_color_dict:dict,x:int,y:int) -> None:
+        """
+        Generate the pycairo legend for the output figure.
+
+        Parameters:
+        -----------
+        motif_color_dict : dict
+            Dicitonary holding the colors associated with each motif. Motif is they key and color is the value.
+        x : int
+            Beginning x coordinate for pycairo image.
+        y : int
+            Beginning y coordinate for pycairo image.
+        """
+        exons_per_row = 4
+        exon_counter = 0
+
+        self.move_to(x,y-20)
+        self.set_source_rgb(0.5,0.5,0.5)
+        self.set_font_size(14)
+        self.select_font_face('Arial',cairo.FONT_SLANT_NORMAL,cairo.FONT_WEIGHT_NORMAL)
+        self.show_text('Legend')
+
+        for k in self.motif_color_dict:
+            self.set_line_width(2)
+            self.set_source_rgb(
+                self.motif_color_dict[k][0],
+                self.motif_color_dict[k][1],
+                self.motif_color_dict[k][2])
+            self.move_to(x,y-5)
+            self.line_to(x,y)
+            self.stroke()
+            self.move_to(x+10,y)
+            self.set_source_rgb(0.5,0.5,0.5)
+            self.set_font_size(12)
+            self.select_font_face('Arial',cairo.FONT_SLANT_NORMAL,cairo.FONT_WEIGHT_NORMAL)
+            self.show_text(k)
+            # shift location right
+            x += 120
+        return None
+
+    def generate_motif_color(self) -> tuple[float,float,float]:
+        """
+        Generates and sets random color to be used in pycairo image
+        
+        Parameters:
+        -----------
+        context : cairo.Context
+            Context object specifying where to draw the image
+
+        Returns:
+        --------
+        red,blue,green : tuple
+            The red blue and green values generated
+        """
+        red = random.uniform(0,1)
+        blue = random.uniform(0,1)
+        green = random.uniform(0,1)
+        self.set_source_rgb(red,blue,green)
+        return red,blue,green
+
+    def set_mark_characteristics(self,motif_object:Motif) -> None:
+        """
+        Pull motif color from the dictionary and set to source rgb
+        """
+        if motif_object.motif not in self.motif_color_dict:
+            self.motif_color_dict[motif_object.motif] = self.generate_motif_color()
+        self.set_source_rgb(
+            self.motif_color_dict[motif_object.motif][0],
+            self.motif_color_dict[motif_object.motif][1],
+            self.motif_color_dict[motif_object.motif][2]
+        )
+        self.set_line_width(motif_object.length)
+
+    def generate_gene_representation(self,start,gene_class_object,gene_center):
+        self.set_line_width(1)
+        self.set_source_rgb(0.2,0.2,0.2)
+        self.move_to(start,gene_center) 
+        self.line_to(gene_class_object.length+start, gene_center)
+        self.stroke()
+
+    def generate_exons(self,gene_class_object,start,init_height):
+        for exon in gene_class_object.exons:
+            self.set_source_rgb(0.2,0.2,0.2)
+            self.rectangle(
+                exon[0]+start,
+                init_height+25,
+                exon[1]-exon[0],
+                50)
+            self.fill()
+            self.rectangle(
+                exon[0]+start,
+                init_height+25,
+                exon[1]-exon[0],
+                50)
+            self.set_source_rgb(1,0,1)
+            self.set_line_width(1)
+            self.stroke()
+        return None
+
+    def generate_new_gene_title(self,surface_width:int,height:int,gene:str,chr_location:str) -> None:
+        """
+        Generates title for new gene
+        """
+        # generate gene title
+        self.set_source_rgb(0.5,0.5,0.5)
+        self.set_font_size(12)
+        self.select_font_face('Arial',cairo.FONT_SLANT_NORMAL,cairo.FONT_WEIGHT_NORMAL)
+        self.move_to(surface_width*.25,height+10)
+        self.show_text(gene)
+
+        # generate gene location subtitle
+        self.set_source_rgb(0.5,0.5,0.5)
+        self.set_font_size(10)
+        self.select_font_face('Arial',cairo.FONT_SLANT_NORMAL,cairo.FONT_WEIGHT_NORMAL)
+        self.move_to(surface_width*.25,height+20)
+        self.show_text(chr_location)
+
+    def generate_pycairo_image(
+        self,
+        gene_collection:GeneCollection,
+        output_file:str,
+        surface_width:int,
+        surface_height:int,
+        init_height:int=100) -> None:
+        """
+        Generate the pycairo image
+
+        Parameters:
+        -----------
+        master_dict : dict
+            Dictionary containing the list of gene objects 'master_list' and 'longest_genes'
+        output_file : str
+            The output file name to write the image to
+        """
+        # define start location for gene representation
+        start = surface_width * .1
+        
+        # define mark height
+        motif_height = 10
+
+        # loop through master dict
+        for gene_class_object in gene_collection.gene_list:
+            
+            # use to avoid overlaps, adjusting y axis of motif marks
+            motif_position_dict = {}
+
+            gene_center = init_height + 50
+
+            self.generate_new_gene_title(surface_width,init_height,gene_class_object.gene,gene_class_object.location)
+            self.generate_gene_representation(start,gene_class_object,gene_center)
+            self.generate_exons(gene_class_object,start,init_height)
+
+            # generate marks
+            for motif_object in gene_class_object.matches:
+
+                self.set_mark_characteristics(motif_object)
+
+                # shift y axis location if overlap
+                for match_loc in gene_class_object.matches[motif_object]:
+                    stagger_height_adjustment = 0
+                    while True:
+                        positions_covered = set(range(match_loc,match_loc+len(motif_object.motif)+10)) # plus ten gives padding to marks
+                        if stagger_height_adjustment in motif_position_dict.keys():
+                            if positions_covered.isdisjoint(motif_position_dict[stagger_height_adjustment]):
+                                motif_position_dict[stagger_height_adjustment].update(positions_covered)   
+                                break                          
+                            else:
+                                stagger_height_adjustment += 3
+                        else:
+                            motif_position_dict[stagger_height_adjustment] = positions_covered
+                            break
+                        
+                    self.move_to(match_loc+start,gene_center-stagger_height_adjustment)
+                    self.line_to(match_loc+start,gene_center-stagger_height_adjustment+2)
+                    self.stroke()
+
+            # adjust height for next gene
+            init_height += 100
+
+        # generate legend
+        self.generate_pycairo_legend(self.motif_color_dict,surface_width*0.1,50)
+        # save as png
+        self.surface.write_to_png(output_file)
+        self.surface.finish()
+        return None
+
+def generate_image_dimensions(gene_collection:GeneCollection):
     """
-    Generate the pycairo legend for the output figure.
-
-    Parameters:
-    -----------
-    context : cairo.Context
-        Context object specifying where to draw the image
-    motif_color_dict : dict
-        Dicitonary holding the colors associated with each motif. Motif is they key and color is the value.
-    x : int
-        Beginning x coordinate for pycairo image.
-    y : int
-        Beginning y coordinate for pycairo image.
+    Defines width and height of the surface object
     """
-    exons_per_row = 4
-    exon_counter = 0
-
-    context.move_to(x,y-20)
-    context.set_source_rgb(0.5,0.5,0.5)
-    context.set_font_size(14)
-    context.select_font_face('Arial',cairo.FONT_SLANT_NORMAL,cairo.FONT_WEIGHT_NORMAL)
-    context.show_text('Legend')
-
-    for k in motif_color_dict:
-        context.set_line_width(2)
-        context.set_source_rgb(
-            motif_color_dict[k][0],
-            motif_color_dict[k][1],
-            motif_color_dict[k][2])
-        context.move_to(x,y-5)
-        context.line_to(x,y)
-        context.stroke()
-        context.move_to(x+10,y)
-        context.set_source_rgb(0.5,0.5,0.5)
-        context.set_font_size(12)
-        context.select_font_face('Arial',cairo.FONT_SLANT_NORMAL,cairo.FONT_WEIGHT_NORMAL)
-        context.show_text(k)
-        # shift location right
-        x += 120
-    return None
-
-def generate_random_color(context:cairo.Context) -> tuple[float,float,float]:
-    """
-    Generates and sets random color to be used in pycairo image
-    
-    Parameters:
-    -----------
-    context : cairo.Context
-        Context object specifying where to draw the image
-
-    Returns:
-    --------
-    red,blue,green : tuple
-        The red blue and green values generated
-    """
-    red = random.uniform(0,1)
-    blue = random.uniform(0,1)
-    green = random.uniform(0,1)
-    context.set_source_rgb(red,blue,green)
-    return red,blue,green
-
-def generate_rectangle(context):
-    return None
-
-def update_longest_gene(master_dict:dict,gene_class_object:Gene) -> None:
-    """
-    Updates the longest gene value in the master_dict
-    
-    Parameters:
-    -----------
-    master_dict : dict
-        The dictionary containing longest gene as key and associated integer value as value.
-    gene_class_object : Gene
-        The cuurent Gene object being evaluated
-    """
-    if master_dict['longest_gene'] < gene_class_object.length:
-        master_dict['longest_gene'] = gene_class_object.length
-    # return master_dict
-    return None
-
-def generate_pycairo(gene_collection:GeneCollection,output_file:str) -> None:
-    """
-    Generate the pycairo image
-
-    Parameters:
-    -----------
-    master_dict : dict
-        Dictionary containing the list of gene objects 'master_list' and 'longest_genes'
-    output_file : str
-        The output file name to write the image to
-    """
-
-    # master_list = gene_collection.gene_list
-
-    # motif color dict for storing colors
-    motif_color_dict = {}
-    
     # define starting height
     height = 100
 
     # set surface
     surface_width = gene_collection.longest_gene + gene_collection.longest_gene * .2
     surface_height = len(gene_collection.gene_list) * 100 + height
-    surface = cairo.SVGSurface('plot.svg',surface_width,surface_height) # TODO: come back and fix surface later
-    context = cairo.Context(surface)
-    
-    start = surface_width * .1 # TODO: can use this to center our images a bit
-    # TODO: ^ need to incorpoarte into our motif location points
-    motif_height = 10
 
-    # loop through master dict
-    for gene_class_object in gene_collection.gene_list:
-        
-        # use to avoid overlaps, adjusting y axis of motif marks
-        motif_position_dict = {}
-
-        gene_center = height + 50
-
-        # generate gene title
-        context.set_source_rgb(0.5,0.5,0.5)
-        context.set_font_size(12)
-        context.select_font_face('Arial',cairo.FONT_SLANT_NORMAL,cairo.FONT_WEIGHT_NORMAL)
-        context.move_to(surface_width*.25,height+10)
-        context.show_text(gene_class_object.gene)
-
-        # generate gene location subtitle
-        context.set_source_rgb(0.5,0.5,0.5)
-        context.set_font_size(10)
-        context.select_font_face('Arial',cairo.FONT_SLANT_NORMAL,cairo.FONT_WEIGHT_NORMAL)
-        context.move_to(surface_width*.25,height+20)
-        context.show_text(gene_class_object.location)
-
-        # generate gene representation
-        context.set_line_width(1)
-        context.set_source_rgb(0.2,0.2,0.2)
-        context.move_to(start,gene_center) 
-        context.line_to(gene_class_object.length+start, height+50)
-        context.stroke()
-
-        # generate exon representation
-        # TODO: put length of exon in gene class (not sure best way to handle)
-        for exon in gene_class_object.exons:
-            context.set_source_rgb(0.2,0.2,0.2)
-            context.rectangle(
-                exon[0]+start,
-                height+25,
-                exon[1]-exon[0],
-                50)
-            context.fill()
-            context.rectangle(
-                exon[0]+start,
-                height+25,
-                exon[1]-exon[0],
-                50)
-            context.set_source_rgb(1,0,1)
-            context.set_line_width(1)
-            context.stroke()
-
-        # generate marks
-        for motif_object in gene_class_object.matches:
-            # extract matches and pattern from class objects
-            matches = gene_class_object.matches[motif_object]
-            pattern = motif_object.motif
-
-            if pattern in motif_color_dict:
-                context.set_source_rgb(
-                    motif_color_dict[pattern][0],
-                    motif_color_dict[pattern][1],
-                    motif_color_dict[pattern][2]
-                )
-            else:
-                # set color for specific motif match
-                red,blue,green = generate_random_color(context)
-                motif_color_dict[pattern] = [red,blue,green]
-                
-            # TODO: put length of motif in motif class (not sure best way to handle)
-            context.set_line_width(len(pattern))
-
-            # shift y axis location if overlap
-            for match_loc in matches:
-                stagger_height_adjustment = 0
-                while True:
-                    # TODO: clean this up
-                    positions_covered = set(range(match_loc,match_loc+len(pattern)+10)) # plus ten gives padding to marks
-                    if stagger_height_adjustment in motif_position_dict.keys():
-                        if positions_covered.isdisjoint(motif_position_dict[stagger_height_adjustment]):
-                            motif_position_dict[stagger_height_adjustment].update(positions_covered)   
-                            break                          
-                        else:
-                            stagger_height_adjustment += 3
-                    else:
-                        motif_position_dict[stagger_height_adjustment] = positions_covered
-                        break
-                    
-                context.move_to(match_loc+start,gene_center-stagger_height_adjustment)
-                context.line_to(match_loc+start,gene_center-stagger_height_adjustment+2)
-                context.stroke()
-
-        # adjust height for next gene
-        height += 100
-
-    # generate legend
-    generate_pycairo_legend(context,motif_color_dict,surface_width*0.1,50)
-    # save as png
-    surface.write_to_png(output_file)
-    surface.finish()
-    return None
+    return surface_width, surface_height
 
 # output name
 def generate_output_filename(input_file:str,name:str=None,output_dir:str=None) -> str:
@@ -507,25 +499,20 @@ def main():
     """
     main program
     """
-    # set random seed
+    # random seed for consistent colors
     random.seed(100)
 
-    # read in args
     args = parse_args()
+    
     oneline_file = oneline_fasta(args.input_file)
     output_file = generate_output_filename(args.input_file,args.new_name,args.output_dir)
 
-    # read in motifs
     motifs = read_in_motifs(args.motif_file)
 
-    # define master list
-    master_dict = {'master_list':[],'longest_gene':0}
-
-    # open fasta
     open_fasta = open(oneline_file)
 
-    # TODO: CAPTURE THIS WHOLE CLASS WITHIN THE MotifCairo CLASS
     gene_collection = GeneCollection()
+    
     while True:
         id_line = open_fasta.readline().rstrip()
         # evalaute if end of file
@@ -535,22 +522,26 @@ def main():
         # instantiate new gene
         gene = Gene(id_line,sequence)
         gene_collection.add_new_gene(gene)
-        update_longest_gene(master_dict,gene)
         # process each motif through gene
         for motif in motifs:
             motif_object = Motif(motif)
             gene.identify_matches(motif_object, sequence)
-        
-        master_dict['master_list'].append(gene)
 
-    # generate pycairo image
-    generate_pycairo(
+    surface_width,surface_height = generate_image_dimensions(gene_collection)
+    
+    surface = cairo.SVGSurface('plot.svg',surface_width,surface_height)
+    context = MotifCairo(surface)
+    
+    context.generate_pycairo_image(
         gene_collection,
-        output_file=output_file)
+        output_file=output_file,
+        surface_width=surface_width,
+        surface_height=surface_height)
 
     open_fasta.close()
 
-    # remove temporary plot
+    # remove temporary fasta and plot
+    os.remove(oneline_file)
     os.remove('plot.svg')
     print('Your image is ready my majesty <bows>')
     
