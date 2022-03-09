@@ -121,7 +121,8 @@ class Gene:
         exons : list
             The start and end position of each exon in the fasta sequence. Each unit is composed of a tuple: (start position, end position)
         """
-        exons = [(m.start(0),m.end(0)) for m in re.finditer(pattern='[A-Z]+',string=sequence)]
+        # plus one accounts for zero indexing
+        exons = [(m.start(0)+1,m.end(0)+1) for m in re.finditer(pattern='[A-Z]+',string=sequence)]
         return exons
 
     def store_motif(self,motif:Motif) -> None:
@@ -151,9 +152,9 @@ class Gene:
         self.store_motif(motif)
         for pattern in motif.combos:
             matches = []
-            # TODO: need to account for overlapping (for example 'aaaaaa' would only return one match for 'aaaa')
             pattern = '(?={0})'.format(pattern)
-            pattern_matches = [m.start(0) for m in re.finditer(pattern,sequence,re.IGNORECASE)]
+            # plus one accounts for zero indexing
+            pattern_matches = [m.start(0)+1 for m in re.finditer(pattern,sequence,re.IGNORECASE)]
             if len(pattern_matches) > 0:
                 for pattern_match in pattern_matches:
                     self.matches[motif].append(pattern_match)
