@@ -28,7 +28,7 @@ conda activate $CONDA_ENV_NAME
 Run the following command to generate your image, replacing the variables with the corresponding values:
 
 ```
-./motif_mark_oop.py -f $FASTA_FILE -m $MOTIF_FILE
+./motif-mark-oop.py -f $FASTA_FILE -m $MOTIF_FILE
 ```
 
 By default, the python script will place the image in a directory ```output/``` adjacent to the directory where the $FASTA_FILE is located. The default name of the image file will be the same as the $FASTA_FILE file, but with ```.png``` extension. 
