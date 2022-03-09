@@ -182,7 +182,6 @@ def read_in_motifs(motif_file:str) -> list:
         if motif == '':
             break
         motifs.append(motif)
-
     f.close()
     
     return motifs
@@ -214,41 +213,53 @@ class GeneCollection():
         
         Parameters:
         -----------
+        longest_gene : int
+            The length of the longest gene currently encountered
         gene_length : int
             Length of gene being added to collection
         
         Returns:
         --------
-        gene_length : int
+        new_gene_length : int
             Length of longest gene in collection
         """
         new_gene_length = max(longest_gene,gene_length)
         return new_gene_length
 
-    def append_gene(self,gene:Gene,gene_list:list) -> tuple:
+    def append_gene(self,gene:Gene,gene_list:list) -> tuple[list,int]:
         """
         Adds new gene to gene_list
         
         Parameters:
         -----------
         gene : Gene
-            Gene to be added to list
+            Gene class object to be added to list
         gene_list : list
-            List of genes 
+            List of Gene class objects
             
         Returns:
         --------
         gene_list : list
             List of genes with new gene appended
+        num_genes : int
+            Number of genes in the gene_list
         """
         gene_list.append(gene)
         num_genes = len(gene_list)
         return gene_list, num_genes
 
-    def process_fasta(self,open_fasta,motifs:list) -> None:
+    def process_fasta(self,oneline_file:str,motifs:list) -> None:
         """
-        Processes a one line fasta file
+        Processes a one line fasta file.
+
+        Parameters:
+        -----------
+        oneline_file : str
+            Path to the temporary oneline fasta file
+        motifs : list
+            List of motifs to process through genes in fasta. Motifs are string representation of each of the motifs in the motif file.
         """
+        open_fasta = open(oneline_file)
         while True:
             id_line = open_fasta.readline().rstrip()
             # evalaute if end of file
@@ -262,6 +273,8 @@ class GeneCollection():
             for motif in motifs:
                 motif_object = Motif(motif)
                 gene.identify_matches(motif_object, sequence)
+        open_fasta.close()
+        os.remove(oneline_file) # removes the temporary oneline fasta file
         return None
 
 
@@ -274,21 +287,53 @@ class MotifCairo(cairo.Context):
         self.motif_color_dict = {}
         self.surface = surface
 
-    def generate_pycairo_legend(self,motif_color_dict:dict,x:int,y:int) -> None:
+    def generate_pycairo_legend(self,x:float,y:int) -> None:
         """
         Generate the pycairo legend for the output figure.
 
         Parameters:
         -----------
-        motif_color_dict : dict
-            Dicitonary holding the colors associated with each motif. Motif is they key and color is the value.
-        x : int
+        x : float
             Beginning x coordinate for pycairo image.
         y : int
             Beginning y coordinate for pycairo image.
         """
         exons_per_row = 4
         exon_counter = 0
+
+        # draw exon key
+        self.set_source_rgb(0.2,0.2,0.2)
+        self.rectangle(
+            x,
+            y+20,
+            5,
+            5)
+        self.fill()
+        self.rectangle(
+            x,
+            y+20,
+            5,
+            5)
+        self.set_source_rgb(1,0,1)
+        self.set_line_width(1)
+        self.stroke()
+
+        self.move_to(x+10,y+25)
+        self.set_source_rgb(0.5,0.5,0.5)
+        self.set_font_size(12)
+        self.select_font_face('Arial',cairo.FONT_SLANT_NORMAL,cairo.FONT_WEIGHT_NORMAL)
+        self.show_text('Exon')
+
+        self.move_to(x+120,y+20)
+        self.set_source_rgb(0.5,0.5,0.5)
+        self.line_to(x+130,y+20)
+        self.stroke()
+
+        self.move_to(x+135,y+25)
+        self.set_source_rgb(0.5,0.5,0.5)
+        self.set_font_size(12)
+        self.select_font_face('Arial',cairo.FONT_SLANT_NORMAL,cairo.FONT_WEIGHT_NORMAL)
+        self.show_text('Gene')
 
         self.move_to(x,y-20)
         self.set_source_rgb(0.5,0.5,0.5)
@@ -318,14 +363,9 @@ class MotifCairo(cairo.Context):
         """
         Generates and sets random color to be used in pycairo image
         
-        Parameters:
-        -----------
-        context : cairo.Context
-            Context object specifying where to draw the image
-
         Returns:
         --------
-        red,blue,green : tuple
+        red,blue,green : tuple[float,float,float]
             The red blue and green values generated
         """
         red = random.uniform(0,1)
@@ -336,7 +376,12 @@ class MotifCairo(cairo.Context):
 
     def set_mark_characteristics(self,motif_object:Motif) -> None:
         """
-        Pull motif color from the dictionary and set to source rgb
+        Set color and length for the next motif to be drawn
+
+        Parameters:
+        -----------
+        motif_object : Motif
+            Motif class object to be processed
         """
         if motif_object.motif not in self.motif_color_dict:
             self.motif_color_dict[motif_object.motif] = self.generate_motif_color()
@@ -346,15 +391,41 @@ class MotifCairo(cairo.Context):
             self.motif_color_dict[motif_object.motif][2]
         )
         self.set_line_width(motif_object.length)
+        return None
 
-    def generate_gene_representation(self,start,gene_class_object,gene_center):
+    def generate_gene_representation(self,start:float,gene_class_object:Gene,gene_center:int) -> None:
+        """
+        Draws the gene representation for the Gene class object being processed.
+        
+        Parameters:
+        -----------
+        start : float
+            The horizontal start location for the next gene
+        gene_class_object : Gene
+            Gene class object being drawn
+        gene_center : int
+            The vertical start location for the next gene
+        """
         self.set_line_width(1)
         self.set_source_rgb(0.2,0.2,0.2)
         self.move_to(start,gene_center) 
         self.line_to(gene_class_object.length+start, gene_center)
         self.stroke()
+        return None
 
-    def generate_exons(self,gene_class_object,start,init_height):
+    def generate_exons(self,gene_class_object:Gene,start:float,init_height:int) -> None:
+        """
+        Draws the exon representations for the Gene class object being processed.
+        
+        Parameters:
+        -----------
+        gene_class_object : Gene
+            Gene class object being processed
+        start : float
+            The horizontal start location for the gene being processed
+        init_height : int
+            Initial height for the gene class being processed
+        """
         for exon in gene_class_object.exons:
             self.set_source_rgb(0.2,0.2,0.2)
             self.rectangle(
@@ -373,9 +444,20 @@ class MotifCairo(cairo.Context):
             self.stroke()
         return None
 
-    def generate_new_gene_title(self,surface_width:int,height:int,gene:str,chr_location:str) -> None:
+    def generate_new_gene_title(self,surface_width:float,height:int,gene:str,chr_location:str) -> None:
         """
-        Generates title for new gene
+        Draws the gene title for the current gene being processed.
+
+        Parameters:
+        -----------
+        surface_width : int
+            The entire surface width
+        height : int
+            The current height for the title to be drawn
+        gene : str
+            The gene name to be drawn
+        chr_location : str
+            The chromosomal coordinates text to be drawn
         """
         # generate gene title
         self.set_source_rgb(0.5,0.5,0.5)
@@ -395,7 +477,7 @@ class MotifCairo(cairo.Context):
         self,
         gene_collection:GeneCollection,
         output_file:str,
-        surface_width:int,
+        surface_width:float,
         surface_height:int,
         init_height:int=100) -> None:
         """
@@ -403,10 +485,16 @@ class MotifCairo(cairo.Context):
 
         Parameters:
         -----------
-        master_dict : dict
-            Dictionary containing the list of gene objects 'master_list' and 'longest_genes'
+        gene_collection : GeneCollection
+            The gene collection object to be drawn. Contains all Gene class objects
         output_file : str
-            The output file name to write the image to
+            The path to the desired output file
+        surface_width : int
+            The entire surface width being drawn
+        surface_height : int
+            The entire surface height being drawn
+        init_height : int
+            The initial height at which to start drawing 
         """
         # define start location for gene representation
         start = surface_width * .1
@@ -454,15 +542,27 @@ class MotifCairo(cairo.Context):
             init_height += 100
 
         # generate legend
-        self.generate_pycairo_legend(self.motif_color_dict,surface_width*0.1,50)
+        self.generate_pycairo_legend(x=surface_width*0.1,y=50)
         # save as png
         self.surface.write_to_png(output_file)
         self.surface.finish()
         return None
 
-def generate_image_dimensions(gene_collection:GeneCollection):
+def generate_image_dimensions(gene_collection:GeneCollection) -> tuple[float,int]:
     """
-    Defines width and height of the surface object
+    Defines width and height of the surface object. Determines width and height based on number and length of genes.
+
+    Parameters:
+    -----------
+    gene_collection : GeneCollection
+        The GeneCollection class object containing all Gene class objects
+    
+    Returns:
+    --------
+    surface_width : float
+        The surface width for the surface to be instantiated - dependent on the length of the longest gene
+    surface_height : int
+        The surface height for the surface to be instantiated - dependent on the number of genes
     """
     # define starting height
     height = 100
@@ -526,15 +626,13 @@ def main():
 
     motifs = read_in_motifs(args.motif_file)
 
-    open_fasta = open(oneline_file)
-
     gene_collection = GeneCollection()
-    gene_collection.process_fasta(open_fasta,motifs)
-    open_fasta.close()
+    gene_collection.process_fasta(oneline_file,motifs)
 
+    # generate image output
     surface_width,surface_height = generate_image_dimensions(gene_collection)
     surface = cairo.SVGSurface('plot.svg',surface_width,surface_height)
-    
+
     context = MotifCairo(surface)
     context.generate_pycairo_image(
         gene_collection,
@@ -543,7 +641,6 @@ def main():
         surface_height=surface_height)
 
     # remove temporary fasta and plot
-    os.remove(oneline_file)
     os.remove('plot.svg')
     print('Your image is ready my majesty <bows>')
     
