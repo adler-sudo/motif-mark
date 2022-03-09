@@ -4,7 +4,7 @@ Motif mark generates an image of a gene, indicating locations of exons, introns,
 
 Motif mark takes two files as input: a fasta file and a motif file (with each motif on a single line).
 
-![](data/output/Figure_2.png)
+![](data/output/Figure_1.png)
 
 ## **Clone the repository**
 
