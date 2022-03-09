@@ -324,6 +324,7 @@ class MotifCairo(cairo.Context):
         self.select_font_face('Arial',cairo.FONT_SLANT_NORMAL,cairo.FONT_WEIGHT_NORMAL)
         self.show_text('Exon')
 
+        # draw gene key
         self.move_to(x+120,y+20)
         self.set_source_rgb(0.5,0.5,0.5)
         self.line_to(x+130,y+20)
@@ -333,7 +334,7 @@ class MotifCairo(cairo.Context):
         self.set_source_rgb(0.5,0.5,0.5)
         self.set_font_size(12)
         self.select_font_face('Arial',cairo.FONT_SLANT_NORMAL,cairo.FONT_WEIGHT_NORMAL)
-        self.show_text('Gene')
+        self.show_text('Intron')
 
         self.move_to(x,y-20)
         self.set_source_rgb(0.5,0.5,0.5)
