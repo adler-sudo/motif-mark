@@ -392,7 +392,7 @@ class MotifCairo(cairo.Context):
             self.motif_color_dict[motif_object.motif][1],
             self.motif_color_dict[motif_object.motif][2]
         )
-        self.set_line_width(motif_object.length)
+        self.set_line_width(1)
         return None
 
     def generate_gene_representation(self,start:float,gene_class_object:Gene,gene_center:int) -> None:
@@ -501,8 +501,11 @@ class MotifCairo(cairo.Context):
         # define start location for gene representation
         start = surface_width * .1
         
-        # define mark height
-        motif_height = 10
+        # set background color
+        self.save()
+        self.set_source_rgb(0, 0, 0)
+        self.paint()
+        self.restore()
 
         # loop through master dict
         for gene_class_object in gene_collection.gene_list:
@@ -537,7 +540,7 @@ class MotifCairo(cairo.Context):
                             break
                         
                     self.move_to(match_loc+start,gene_center-stagger_height_adjustment)
-                    self.line_to(match_loc+start,gene_center-stagger_height_adjustment+2)
+                    self.line_to(match_loc+start+len(motif_object.motif),gene_center-stagger_height_adjustment)
                     self.stroke()
 
             # adjust height for next gene
